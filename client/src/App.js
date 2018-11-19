@@ -1,8 +1,16 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
+import socketIOClient from 'socket.io-client';
 
 class App extends Component {
+
+  componentDidMount(){
+    const socket = socketIOClient("http://localhost:5001");
+    socket.on('order_item', data => {
+      console.log('data from server via socket: ', data)
+    })
+  }
   render() {
     return (
       <div className="App">

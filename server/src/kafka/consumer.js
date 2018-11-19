@@ -9,11 +9,18 @@ var kafka = require('kafka-node'),
             { topic: 'kafka-test', partition: 0 }
         ],
         {
-            autoCommit: false
+            autoCommit: true
         }
     );
-    consumer.on('message', function (message) {
-        const data = {kafka: message}
-        console.log('sent request to kervServer....', message);
-    });
-    consumer.connect();
+module.exports = io => {
+    io.on('connection', function(socket){
+        console.log('Something connected: ');
+        consumer.on('message', function (message) {
+            const data = {kafka: message}
+            order = JSON.parse(message.value);
+            socket.emit('order_item', order);
+        });
+    })
+}
+   
+ consumer.connect();
