@@ -1,4 +1,5 @@
-const url = "http://localhost:5000/api/kafkaTest";
+const Drink = require('../models/drink');
+const Inventory = require('../models/inventory');
 
 var kafka = require('kafka-node'),
     Consumer = kafka.Consumer,
@@ -12,13 +13,44 @@ var kafka = require('kafka-node'),
             autoCommit: true
         }
     );
+
 module.exports = io => {
-    io.on('connection', function(socket){
-        console.log('Something connected: ');
-        consumer.on('message', function (message) {
-            const data = {kafka: message}
-            order = JSON.parse(message.value);
-            socket.emit('order_item', order);
+    io.on('connection', (socket) => {
+        console.log('*** Socket Connection with Client Starting.. ***');
+
+        consumer.on('message', (message) => {
+            orderItem = JSON.parse(message.value)
+            order = {}
+           
+            Drink.findOne({_id: orderItem.drink}, 'name')
+            .then(drinkDoc => {
+                order['drink'] = drinkDoc.name;
+                Inventory.findOne({_id: orderItem.bean}, 'name')
+                .then(beanDoc => {
+                    order['bean'] = beanDoc.name
+
+                    if(orderItem.milk !== null) {
+                        Inventory.findOne({_id: orderItem.milk}, 'name')
+                        .then(milkDoc => {
+                            order['milk'] = milkDoc.name
+                            socket.emit('order_item', order);
+                        })
+                        .catch(err => {
+                            console.log('Error searching for milk: ', err)
+                        })
+                    }
+                    else {
+                         socket.emit('order_item', order);
+                    }
+                })
+                .catch(err => {
+                    console.log('Error searching for bean: ', err)
+                })
+            })
+            .catch(err => {
+                console.log('Error finding drink: ', err);
+            })
+            
         });
     })
 }

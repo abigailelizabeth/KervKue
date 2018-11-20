@@ -7,6 +7,31 @@ var kafka = require('kafka-node'),
     client = new kafka.KafkaClient({kafkaHost: 'localhost:9092' }),
     producer = new Producer(client)
 
+ const pipeline = [{
+    $lookup: {
+        from: 'drinks',
+        localField: 'fullDocument.drink',
+        foreignField: '_id',
+        as: 'fullDocument.drink'
+    }
+ },
+ {
+    $lookup: {
+        from: 'inventories',
+        localField: 'fullDocument.milk',
+        foreignField: '_id',
+        as: 'fullDocument.milk'
+    }
+ },
+ {
+    $lookup: {
+        from: 'inventories',
+        localField: 'fullDocument.bean',
+        foreignField: '_id',
+        as: 'fullDocument.bean'
+    }
+ }]   
+
 producer.on('ready', function () {
     const changeStream = OrderItem.watch().on('change', change => {
         producer.send([{topic: 'kafka-test', messages: JSON.stringify(change.fullDocument), partition: 0}], function(err, data){
